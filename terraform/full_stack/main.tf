@@ -48,19 +48,30 @@ resource "aws_route_table" "epl-dev-route-table-1" {
   }
 }
 
-resource "aws_subnet" "epl-dev-subnet-1" {
+resource "aws_subnet" "epl-dev-subnet-frontend" {
   vpc_id            = aws_vpc.epl-dev-vpc.id
-  cidr_block        = var.subnet_prefix
+  cidr_block        = var.subnet_prefix_frontend
   availability_zone = "us-east-1a"
 
   tags = {
-    Name = "epl-dev-subnet"
+    Name = "epl-dev-subnet-frontent"
+  }
+
+}
+
+resource "aws_subnet" "epl-dev-subnet-backend" {
+  vpc_id            = aws_vpc.epl-dev-vpc.id
+  cidr_block        = var.subnet_prefix_backend
+  availability_zone = "us-east-1a"
+
+  tags = {
+    Name = "epl-dev-subnet-backend"
   }
 
 }
 
 resource "aws_route_table_association" "a" {
-  subnet_id      = aws_subnet.epl-dev-subnet-1.id
+  subnet_id      = aws_subnet.epl-dev-subnet-frontend.id
   route_table_id = aws_route_table.epl-dev-route-table-1.id
 }
 
@@ -106,7 +117,7 @@ resource "aws_security_group" "allow_web" {
 }
 
 resource "aws_network_interface" "epl-dev-web-server-nic" {
-  subnet_id       = aws_subnet.epl-dev-subnet-1.id
+  subnet_id       = aws_subnet.epl-dev-subnet-frontend.id
   private_ips     = ["10.0.1.50"]
   security_groups = [aws_security_group.allow_web.id]
 }
@@ -140,4 +151,26 @@ resource "aws_instance" "epl-dev-web-server" {
   tags = {
     Name = "epl-dev-web-server"
   }
+}
+
+resource "aws_db_subnet_group" "epl-dev-db-subnet-group" {
+  name       = "main"
+  subnet_ids = [aws_subnet.epl-dev-subnet-frontend.id, aws_subnet.epl-dev-subnet-backend.id]
+
+  tags = {
+    Name = "EPL Dev DB subnet group"
+  }
+}
+
+resource "aws_db_instance" "epl-dev-rds" {
+  allocated_storage    = 100
+  db_subnet_group_name = "main"
+  engine               = "postgres"
+  engine_version       = "11.5"
+  identifier           = "epl-dev-rds"
+  instance_class       = "db.m5.large"
+  password             = "password"
+  skip_final_snapshot  = true
+  storage_encrypted    = true
+  username             = "postgres"
 }
