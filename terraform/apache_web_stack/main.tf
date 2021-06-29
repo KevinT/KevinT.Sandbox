@@ -50,7 +50,7 @@ resource "aws_route_table" "epl-dev-route-table-1" {
 
 resource "aws_subnet" "epl-dev-subnet-1" {
   vpc_id            = aws_vpc.epl-dev-vpc.id
-  cidr_block        = "10.0.1.0/24"
+  cidr_block        = var.subnet_prefix
   availability_zone = "us-east-1a"
 
   tags = {
@@ -120,6 +120,10 @@ resource "aws_eip" "one" {
   ]
 }
 
+output "server_public_ip" {
+  value = aws_eip.one.public_ip
+}
+
 resource "aws_instance" "epl-dev-web-server" {
   ami               = "ami-09e67e426f25ce0d7"
   instance_type     = "t2.micro"
@@ -135,5 +139,14 @@ resource "aws_instance" "epl-dev-web-server" {
 
   tags = {
     Name = "epl-dev-web-server"
+  }
+}
+
+resource "aws_db_subnet_group" "default" {
+  name       = "main"
+  subnet_ids = [aws_subnet.frontend.id, aws_subnet.backend.id]
+
+  tags = {
+    Name = "My DB subnet group"
   }
 }
