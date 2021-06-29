@@ -1,0 +1,10 @@
+# misc
+*.cer
+
+#Terraform
+**/*.tfstate*
+**/*.tfvars
+.terraform/
+
+# macos
+*.DS_Store
